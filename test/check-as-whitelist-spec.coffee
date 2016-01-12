@@ -1,18 +1,18 @@
 http = require 'http'
-CheckWhitelist = require '../'
+CheckAsWhitelist = require '../src/check-as-whitelist'
 
-describe 'CheckWhitelist', ->
+describe 'CheckAsWhitelist', ->
   beforeEach ->
     @whitelistManager =
-      canSend: sinon.stub()
+      canConfigureAs: sinon.stub()
 
-    @sut = new CheckWhitelist
+    @sut = new CheckAsWhitelist
       whitelistManager: @whitelistManager
 
   describe '->do', ->
     describe 'when called with a valid job', ->
       beforeEach (done) ->
-        @whitelistManager.canSend.yields null, true
+        @whitelistManager.canConfigureAs.yields null, true
         job =
           metadata:
             auth:
@@ -34,7 +34,7 @@ describe 'CheckWhitelist', ->
 
     describe 'when called with a valid job without a fromUuid', ->
       beforeEach (done) ->
-        @whitelistManager.canSend.yields null, true
+        @whitelistManager.canConfigureAs.yields null, true
         job =
           metadata:
             auth:
@@ -44,12 +44,12 @@ describe 'CheckWhitelist', ->
             responseId: 'yellow-green'
         @sut.do job, (error, @newJob) => done error
 
-      it 'should call the whitelistmanager with the correct arguments', ->
-        expect(@whitelistManager.canSend).to.have.been.calledWith fromUuid: 'green-blue', toUuid: 'bright-green'
+      it 'should get have the responseId', ->
+        expect(@whitelistManager.canConfigureAs).to.have.been.calledWith toUuid: 'green-blue', fromUuid: 'green-blue'
 
     describe 'when called with a different valid job', ->
       beforeEach (done) ->
-        @whitelistManager.canSend.yields null, true
+        @whitelistManager.canConfigureAs.yields null, true
         job =
           metadata:
             auth:
@@ -69,9 +69,9 @@ describe 'CheckWhitelist', ->
       it 'should get have the status of OK', ->
         expect(@newJob.metadata.status).to.equal http.STATUS_CODES[204]
 
-    describe 'when called with a job that with a device that has an invalid whitelist', ->
+    describe 'when called with a job that with a device that cannot be discovered', ->
       beforeEach (done) ->
-        @whitelistManager.canSend.yields null, false
+        @whitelistManager.canConfigureAs.yields null, false
         job =
           metadata:
             auth:
@@ -91,9 +91,9 @@ describe 'CheckWhitelist', ->
       it 'should get have the status of Forbidden', ->
         expect(@newJob.metadata.status).to.equal http.STATUS_CODES[403]
 
-    describe 'when called and the canSend yields an error', ->
+    describe 'when called and the canConfigureAs yields an error', ->
       beforeEach (done) ->
-        @whitelistManager.canSend.yields new Error "black-n-black"
+        @whitelistManager.canConfigureAs.yields new Error "black-n-black"
         job =
           metadata:
             auth:
